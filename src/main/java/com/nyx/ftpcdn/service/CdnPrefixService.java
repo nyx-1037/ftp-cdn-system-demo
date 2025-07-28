@@ -200,6 +200,7 @@ public class CdnPrefixService {
                 "默认CDN",
                 "https://cdn.example.cn",
                 "系统默认CDN前缀",
+                true,
                 true
             );
             
