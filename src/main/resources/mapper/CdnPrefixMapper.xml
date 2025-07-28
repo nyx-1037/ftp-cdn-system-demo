@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nyx.ftpcdn.mapper.CdnPrefixMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="CdnPrefixResultMap" type="com.nyx.ftpcdn.entity.CdnPrefix">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="prefix_url" property="prefixUrl" />
+        <result column="description" property="description" />
+        <result column="is_default" property="isDefault" />
+        <result column="enabled" property="enabled" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+    
+    <!-- 插入CDN前缀 -->
+    <insert id="insert" parameterType="com.nyx.ftpcdn.entity.CdnPrefix" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cdn_prefix (
+            name,
+            prefix_url,
+            description,
+            is_default,
+            enabled,
+            create_time,
+            update_time
+        ) VALUES (
+            #{name},
+            #{prefixUrl},
+            #{description},
+            #{isDefault},
+            #{enabled},
+            #{createTime},
+            #{updateTime}
+        )
+    </insert>
+    
+    <!-- 根据ID查询CDN前缀 -->
+    <select id="findById" parameterType="long" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix WHERE id = #{id}
+    </select>
+    
+    <!-- 查询所有CDN前缀 -->
+    <select id="findAll" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix ORDER BY is_default DESC, create_time ASC
+    </select>
+    
+    <!-- 查询所有启用的CDN前缀 -->
+    <select id="findAllEnabled" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix 
+        WHERE enabled = true 
+        ORDER BY is_default DESC, create_time ASC
+    </select>
+    
+    <!-- 查询默认CDN前缀 -->
+    <select id="findDefault" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix WHERE is_default = true LIMIT 1
+    </select>
+    
+    <!-- 更新CDN前缀 -->
+    <update id="update" parameterType="com.nyx.ftpcdn.entity.CdnPrefix">
+        UPDATE cdn_prefix 
+        SET name = #{name},
+            prefix_url = #{prefixUrl},
+            description = #{description},
+            enabled = #{enabled},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 设置默认CDN前缀 -->
+    <update id="setDefault" parameterType="long">
+        <!-- 首先将所有CDN前缀设为非默认 -->
+        UPDATE cdn_prefix SET is_default = false;
+        <!-- 然后将指定的CDN前缀设为默认 -->
+        UPDATE cdn_prefix SET is_default = true, update_time = NOW() WHERE id = #{id};
+    </update>
+    
+    <!-- 清除所有默认标记 -->
+    <update id="clearAllDefault">
+        UPDATE cdn_prefix SET is_default = false, update_time = NOW()
+    </update>
+    
+    <!-- 根据ID删除CDN前缀 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM cdn_prefix WHERE id = #{id}
+    </delete>
+    
+    <!-- 检查名称是否已存在 -->
+    <select id="existsByName" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM cdn_prefix 
+        WHERE name = #{name}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+    
+    <!-- 检查前缀URL是否已存在 -->
+    <select id="existsByPrefixUrl" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM cdn_prefix 
+        WHERE prefix_url = #{prefixUrl}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+    
+    <!-- 根据名称查询CDN前缀 -->
+    <select id="findByName" parameterType="string" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix WHERE name = #{name}
+    </select>
+    
+    <!-- 根据前缀URL查询CDN前缀 -->
+    <select id="findByPrefixUrl" parameterType="string" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix WHERE prefix_url = #{prefixUrl}
+    </select>
+    
+    <!-- 统计CDN前缀总数 -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM cdn_prefix
+    </select>
+    
+    <!-- 统计启用的CDN前缀数量 -->
+    <select id="countEnabled" resultType="long">
+        SELECT COUNT(*) FROM cdn_prefix WHERE enabled = true
+    </select>
+    
+    <!-- 批量启用/禁用CDN前缀 -->
+    <update id="updateEnabledStatus">
+        UPDATE cdn_prefix 
+        SET enabled = #{enabled}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <!-- 批量删除CDN前缀 -->
+    <delete id="deleteByIds">
+        DELETE FROM cdn_prefix 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_default = false
+    </delete>
+    
+    <!-- 查询非默认的CDN前缀 -->
+    <select id="findNonDefault" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix 
+        WHERE is_default = false 
+        ORDER BY create_time ASC
+    </select>
+    
+    <!-- 检查是否存在默认CDN前缀 -->
+    <select id="hasDefault" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM cdn_prefix WHERE is_default = true
+    </select>
+    
+    <!-- 获取CDN前缀使用统计 -->
+    <select id="getUsageStats" resultType="map">
+        SELECT 
+            cp.id,
+            cp.name,
+            cp.prefix_url as prefixUrl,
+            cp.enabled,
+            cp.is_default as isDefault,
+            COALESCE(fi.file_count, 0) as fileCount,
+            COALESCE(fi.total_size, 0) as totalSize,
+            COALESCE(fi.total_downloads, 0) as totalDownloads
+        FROM cdn_prefix cp
+        LEFT JOIN (
+            SELECT 
+                cdn_prefix,
+                COUNT(*) as file_count,
+                SUM(file_size) as total_size,
+                SUM(download_count) as total_downloads
+            FROM file_info 
+            GROUP BY cdn_prefix
+        ) fi ON cp.prefix_url = fi.cdn_prefix
+        ORDER BY cp.is_default DESC, fi.file_count DESC
+    </select>
+    
+    <!-- 查询最近创建的CDN前缀 -->
+    <select id="findRecent" parameterType="int" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix 
+        ORDER BY create_time DESC 
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 搜索CDN前缀 -->
+    <select id="searchByKeyword" parameterType="string" resultMap="CdnPrefixResultMap">
+        SELECT * FROM cdn_prefix 
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+           OR prefix_url LIKE CONCAT('%', #{keyword}, '%')
+           OR description LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY is_default DESC, create_time ASC
+    </select>
+    
+    <!-- 更新CDN前缀的描述 -->
+    <update id="updateDescription">
+        UPDATE cdn_prefix 
+        SET description = #{description}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 更新CDN前缀的启用状态 -->
+    <update id="updateEnabled">
+        UPDATE cdn_prefix 
+        SET enabled = #{enabled}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 检查CDN前缀是否被文件使用 -->
+    <select id="isUsedByFiles" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM file_info WHERE cdn_prefix = #{prefixUrl}
+    </select>
+    
+    <!-- 获取使用指定CDN前缀的文件数量 -->
+    <select id="getFileCountByPrefix" parameterType="string" resultType="long">
+        SELECT COUNT(*) FROM file_info WHERE cdn_prefix = #{prefixUrl}
+    </select>
+    
+</mapper>

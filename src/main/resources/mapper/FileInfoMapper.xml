@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nyx.ftpcdn.mapper.FileInfoMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="FileInfoResultMap" type="com.nyx.ftpcdn.entity.FileInfo">
+        <id column="id" property="id" />
+        <result column="original_file_name" property="originalFileName" />
+        <result column="generated_file_name" property="generatedFileName" />
+        <result column="file_size" property="fileSize" />
+        <result column="file_extension" property="fileExtension" />
+        <result column="cdn_prefix" property="cdnPrefix" />
+        <result column="ftp_path" property="ftpPath" />
+        <result column="full_url" property="fullUrl" />
+        <result column="description" property="description" />
+        <result column="download_count" property="downloadCount" />
+        <result column="upload_time" property="uploadTime" />
+    </resultMap>
+    
+    <!-- 插入文件信息 -->
+    <insert id="insert" parameterType="com.nyx.ftpcdn.entity.FileInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_info (
+            original_file_name,
+            generated_file_name,
+            file_size,
+            file_extension,
+            cdn_prefix,
+            ftp_path,
+            full_url,
+            description,
+            download_count,
+            upload_time
+        ) VALUES (
+            #{originalFileName},
+            #{generatedFileName},
+            #{fileSize},
+            #{fileExtension},
+            #{cdnPrefix},
+            #{ftpPath},
+            #{fullUrl},
+            #{description},
+            #{downloadCount},
+            #{uploadTime}
+        )
+    </insert>
+    
+    <!-- 根据ID查询文件信息 -->
+    <select id="findById" parameterType="long" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info WHERE id = #{id}
+    </select>
+    
+    <!-- 查询所有文件信息 -->
+    <select id="findAll" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info ORDER BY upload_time DESC
+    </select>
+    
+    <!-- 分页查询文件信息 -->
+    <select id="findByPage" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info 
+        ORDER BY upload_time DESC
+    </select>
+    
+    <!-- 根据关键词搜索文件 -->
+    <select id="searchByKeyword" parameterType="string" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info 
+        WHERE original_file_name LIKE CONCAT('%', #{keyword}, '%')
+           OR description LIKE CONCAT('%', #{keyword}, '%')
+           OR generated_file_name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY upload_time DESC
+    </select>
+    
+    <!-- 统计文件总数 -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM file_info
+    </select>
+    
+    <!-- 根据关键词统计搜索结果数量 -->
+    <select id="countByKeyword" parameterType="string" resultType="long">
+        SELECT COUNT(*) FROM file_info 
+        WHERE original_file_name LIKE CONCAT('%', #{keyword}, '%')
+           OR description LIKE CONCAT('%', #{keyword}, '%')
+           OR generated_file_name LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+    
+    <!-- 更新文件描述 -->
+    <update id="updateDescription">
+        UPDATE file_info 
+        SET description = #{description}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 增加下载次数 -->
+    <update id="incrementDownloadCount" parameterType="long">
+        UPDATE file_info 
+        SET download_count = download_count + 1
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 根据ID删除文件信息 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM file_info WHERE id = #{id}
+    </delete>
+    
+    <!-- 根据生成的文件名查询 -->
+    <select id="findByGeneratedFileName" parameterType="string" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info WHERE generated_file_name = #{generatedFileName}
+    </select>
+    
+    <!-- 根据FTP路径查询 -->
+    <select id="findByFtpPath" parameterType="string" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info WHERE ftp_path = #{ftpPath}
+    </select>
+    
+    <!-- 查询最近上传的文件 -->
+    <select id="findRecentFiles" parameterType="int" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info 
+        ORDER BY upload_time DESC 
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 查询热门下载文件 -->
+    <select id="findPopularFiles" parameterType="int" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info 
+        WHERE download_count > 0
+        ORDER BY download_count DESC, upload_time DESC 
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 根据文件扩展名查询 -->
+    <select id="findByFileExtension" parameterType="string" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info 
+        WHERE file_extension = #{fileExtension}
+        ORDER BY upload_time DESC
+    </select>
+    
+    <!-- 查询指定日期范围内的文件 -->
+    <select id="findByDateRange" resultMap="FileInfoResultMap">
+        SELECT * FROM file_info 
+        WHERE upload_time BETWEEN #{startDate} AND #{endDate}
+        ORDER BY upload_time DESC
+    </select>
+    
+    <!-- 统计文件大小总和 -->
+    <select id="getTotalFileSize" resultType="long">
+        SELECT COALESCE(SUM(file_size), 0) FROM file_info
+    </select>
+    
+    <!-- 统计各文件类型数量 -->
+    <select id="getFileTypeStats" resultType="map">
+        SELECT 
+            file_extension as fileExtension,
+            COUNT(*) as count,
+            SUM(file_size) as totalSize
+        FROM file_info 
+        WHERE file_extension IS NOT NULL AND file_extension != ''
+        GROUP BY file_extension
+        ORDER BY count DESC
+    </select>
+    
+    <!-- 批量删除文件 -->
+    <delete id="deleteByIds">
+        DELETE FROM file_info 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <!-- 更新文件的CDN前缀 -->
+    <update id="updateCdnPrefix">
+        UPDATE file_info 
+        SET cdn_prefix = #{newCdnPrefix},
+            full_url = CONCAT(#{newCdnPrefix}, SUBSTRING(full_url, LENGTH(cdn_prefix) + 1))
+        WHERE cdn_prefix = #{oldCdnPrefix}
+    </update>
+    
+    <!-- 检查文件名是否已存在 -->
+    <select id="existsByGeneratedFileName" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM file_info WHERE generated_file_name = #{generatedFileName}
+    </select>
+    
+    <!-- 获取文件上传统计信息 -->
+    <select id="getUploadStats" resultType="map">
+        SELECT 
+            DATE(upload_time) as uploadDate,
+            COUNT(*) as fileCount,
+            SUM(file_size) as totalSize
+        FROM file_info 
+        WHERE upload_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(upload_time)
+        ORDER BY uploadDate DESC
+    </select>
+    
+</mapper>

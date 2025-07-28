@@ -1,0 +1,83 @@
+# Spring Boot 应用配置
+spring:
+  application:
+    name: ftp-cdn-system
+  
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/ftp_cdn_system?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+      
+  # Thymeleaf配置
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+    mode: HTML
+    prefix: classpath:/templates/
+    suffix: .html
+    
+  # 开发工具配置
+  devtools:
+    restart:
+      enabled: true
+      
+# MyBatis配置
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.nyx.ftpcdn.entity
+  
+# PageHelper配置
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql
+  
+# FTP服务器配置
+ftp:
+  host: your-ftp-server.com
+  port: 21
+  username: your_ftp_username
+  password: your_ftp_password
+  base-path: /uploads
+  
+# 服务器配置
+server:
+  port: 8765
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      
+# 日志配置
+logging:
+  level:
+    com.nyx.ftpcdn: DEBUG
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/ftp-cdn-system.log
+    
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

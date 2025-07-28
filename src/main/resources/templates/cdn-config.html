@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDN配置 - FTP-CDN文件管理系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #f8fafc;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+        
+        body {
+            background-color: var(--secondary-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+        
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background-color: #f8fafc;
+            border: none;
+            font-weight: 600;
+            color: #374151;
+            padding: 16px;
+        }
+        
+        .table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-color: #e5e7eb;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+        
+        .toast {
+            border-radius: 8px;
+        }
+        
+        .breadcrumb {
+            background: none;
+            padding: 0;
+        }
+        
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+        
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px 24px;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 16px 24px;
+        }
+        
+        .url-preview {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        @media (max-width: 768px) {
+            .table-responsive {
+                border-radius: 8px;
+            }
+            
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            
+            .modal-body {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-cloud-upload-alt me-2"></i>
+                FTP-CDN文件管理系统
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home me-1"></i>
+                    首页
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 面包屑导航 -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="/">
+                        <i class="fas fa-home me-1"></i>
+                        首页
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">CDN配置</li>
+            </ol>
+        </nav>
+
+        <!-- 页面标题和添加按钮 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-cog text-primary me-2"></i>
+                    CDN前缀配置
+                </h2>
+                <p class="text-muted mb-0">管理CDN前缀，配置文件访问域名</p>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCdnModal">
+                <i class="fas fa-plus me-2"></i>
+                添加CDN前缀
+            </button>
+        </div>
+
+        <!-- CDN前缀列表 -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2 text-primary"></i>
+                    CDN前缀列表
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>CDN前缀URL</th>
+                                <th>描述</th>
+                                <th>状态</th>
+                                <th>默认</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="prefix : ${cdnPrefixes}">
+                                <td>
+                                    <strong th:text="${prefix.name}"></strong>
+                                </td>
+                                <td>
+                                    <code th:text="${prefix.prefix}"></code>
+                                </td>
+                                <td>
+                                    <span th:text="${prefix.description}" th:if="${prefix.description != null and prefix.description != ''}"></span>
+                                    <span class="text-muted" th:unless="${prefix.description != null and prefix.description != ''}">无描述</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success" th:if="${prefix.isActive}">启用</span>
+                                    <span class="badge bg-secondary" th:unless="${prefix.isActive}">禁用</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary" th:if="${prefix.isDefault}">
+                                        <i class="fas fa-star me-1"></i>
+                                        默认
+                                    </span>
+                                    <span class="text-muted" th:unless="${prefix.isDefault}">-</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted" th:text="${#temporals.format(prefix.createTime, 'yyyy-MM-dd HH:mm')}"></small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-primary btn-sm" 
+                                                th:data-id="${prefix.id}"
+                                                onclick="editCdnPrefix(this.dataset.id)"
+                                                title="编辑">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        <button class="btn btn-outline-success btn-sm" 
+                                                th:data-id="${prefix.id}"
+                                                onclick="setDefaultCdnPrefix(this.dataset.id)"
+                                                th:unless="${prefix.isDefault}"
+                                                title="设为默认">
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                        
+                                        <button class="btn btn-outline-danger btn-sm" 
+                                                th:data-id="${prefix.id}"
+                                                onclick="deleteCdnPrefix(this.dataset.id)"
+                                                th:unless="${prefix.isDefault}"
+                                                title="删除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="p-3 text-center text-muted" th:if="${#lists.isEmpty(cdnPrefixes)}">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p class="mb-0">暂无CDN前缀配置</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2 text-primary"></i>
+                    使用说明
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">CDN前缀配置</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                CDN前缀用于构建文件的完整访问URL
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                支持多个CDN前缀，可设置默认前缀
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                URL格式：https://cdn.example.com
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">注意事项</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                默认CDN前缀不能删除
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                URL必须以http://或https://开头
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                建议使用中国区可访问的CDN服务
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加CDN前缀模态框 -->
+    <div class="modal fade" id="addCdnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus text-primary me-2"></i>
+                        添加CDN前缀
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addCdnForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="addName" class="form-label">名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="addName" name="name" 
+                                   placeholder="例如：阿里云CDN" required>
+                            <div class="form-text">给这个CDN前缀起一个便于识别的名称</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="addPrefixUrl" class="form-label">CDN前缀URL <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control" id="addPrefixUrl" name="prefixUrl" 
+                                   placeholder="https://cdn.example.com" required>
+                            <div class="form-text">完整的CDN域名，必须以http://或https://开头</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="addDescription" class="form-label">描述</label>
+                            <textarea class="form-control" id="addDescription" name="description" 
+                                      rows="3" placeholder="可选的描述信息"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="addEnabled" name="isActive" checked>
+                                <label class="form-check-label" for="addEnabled">
+                                    启用此CDN前缀
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="addIsDefault" name="isDefault">
+                                <label class="form-check-label" for="addIsDefault">
+                                    设为默认CDN前缀
+                                </label>
+                            </div>
+                            <div class="form-text">设为默认后，新上传的文件将使用此CDN前缀</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>预览：</strong>
+                            <div class="url-preview mt-2" id="urlPreview">
+                                https://cdn.example.com/path/to/file.jpg
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑CDN前缀模态框 -->
+    <div class="modal fade" id="editCdnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit text-primary me-2"></i>
+                        编辑CDN前缀
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editCdnForm">
+                    <input type="hidden" id="editId" name="id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editName" class="form-label">名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editName" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editPrefixUrl" class="form-label">CDN前缀URL <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control" id="editPrefixUrl" name="prefixUrl" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">描述</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editEnabled" name="isActive">
+                                <label class="form-check-label" for="editEnabled">
+                                    启用此CDN前缀
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                <strong class="me-auto">系统通知</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                <!-- 消息内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // URL预览更新
+        document.getElementById('addPrefixUrl').addEventListener('input', function() {
+            const url = this.value || 'https://cdn.example.com';
+            document.getElementById('urlPreview').textContent = url + '/path/to/file.jpg';
+        });
+        
+        // 添加CDN前缀
+        document.getElementById('addCdnForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const params = new URLSearchParams();
+            params.append('name', formData.get('name'));
+            params.append('prefix', formData.get('prefixUrl'));
+            params.append('description', formData.get('description'));
+            params.append('isActive', formData.has('isActive'));
+            params.append('isDefault', formData.has('isDefault'));
+            
+            try {
+                const response = await fetch('/cdn/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('CDN前缀添加成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addCdnModal')).hide();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'CDN前缀添加失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误，请重试', 'error');
+            }
+        });
+        
+        // 编辑CDN前缀
+        async function editCdnPrefix(id) {
+            try {
+                const response = await fetch(`/cdn/${id}`);
+                const prefix = await response.json();
+                
+                document.getElementById('editId').value = prefix.id;
+                document.getElementById('editName').value = prefix.name;
+                document.getElementById('editPrefixUrl').value = prefix.prefix;
+                document.getElementById('editDescription').value = prefix.description || '';
+                document.getElementById('editEnabled').checked = prefix.isActive;
+                
+                new bootstrap.Modal(document.getElementById('editCdnModal')).show();
+            } catch (error) {
+                showToast('获取CDN前缀信息失败', 'error');
+            }
+        }
+        
+        // 更新CDN前缀
+        document.getElementById('editCdnForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const params = new URLSearchParams();
+            params.append('name', formData.get('name'));
+            params.append('prefix', formData.get('prefixUrl'));
+            params.append('description', formData.get('description'));
+            params.append('isActive', formData.has('isActive'));
+            params.append('isDefault', false); // 编辑时不修改默认状态
+            
+            try {
+                const response = await fetch(`/cdn/${formData.get('id')}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('CDN前缀更新成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('editCdnModal')).hide();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'CDN前缀更新失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误，请重试', 'error');
+            }
+        });
+        
+        // 设置默认CDN前缀
+        async function setDefaultCdnPrefix(id) {
+            if (confirm('确定要将此CDN前缀设为默认吗？')) {
+                try {
+                    const response = await fetch(`/cdn/${id}/default`, {
+                        method: 'POST'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast('默认CDN前缀设置成功', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(result.message || '设置默认CDN前缀失败', 'error');
+                    }
+                } catch (error) {
+                    showToast('网络错误，请重试', 'error');
+                }
+            }
+        }
+        
+        // 删除CDN前缀
+        async function deleteCdnPrefix(id) {
+            if (confirm('确定要删除此CDN前缀吗？此操作不可恢复！')) {
+                try {
+                    const response = await fetch(`/cdn/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast('CDN前缀删除成功', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(result.message || 'CDN前缀删除失败', 'error');
+                    }
+                } catch (error) {
+                    showToast('网络错误，请重试', 'error');
+                }
+            }
+        }
+        
+        // 显示Toast通知
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastHeader = toast.querySelector('.toast-header');
+            
+            // 设置消息内容
+            toastMessage.textContent = message;
+            
+            // 设置图标和颜色
+            const icon = toastHeader.querySelector('i');
+            icon.className = 'me-2 ';
+            
+            switch (type) {
+                case 'success':
+                    icon.className += 'fas fa-check-circle text-success';
+                    break;
+                case 'error':
+                    icon.className += 'fas fa-exclamation-circle text-danger';
+                    break;
+                case 'warning':
+                    icon.className += 'fas fa-exclamation-triangle text-warning';
+                    break;
+                default:
+                    icon.className += 'fas fa-info-circle text-primary';
+            }
+            
+            // 显示Toast
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+    </script>
+</body>
+</html>
